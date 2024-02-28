@@ -1,0 +1,68 @@
+---
+title: "The Pipe(s) Operator(s) in R"
+date: today 
+toc: true
+format:  
+  html: 
+    code-link: true
+    df-print: paged
+    embed-resources: true 
+editor_options:  
+  chunk_output_type: console
+execute:
+  warning: false
+---
+
+The pipe takes the argument on the left and passes it as the first argument to the function on the right. 
+
+- Native pipe: `|>`
+
+```{r}
+"Hola" |> print()
+```
+
+- Magrittr pipe: `%>%`
+
+```{r}
+library(magrittr)
+
+"Hola" %>% print()
+```
+
+Using the pipe operator, we can chain together multiple operations in a way that is easier to read for a human.
+
+```{r}
+library(medicaldata)
+library(tidyverse)
+
+# No pipe matrioshka  
+str_c(
+  str_c(
+    round(
+      pull(
+        summarise(
+          group_by(
+            filter(covid_testing, result == "positive"),
+            gender
+          ),mean_age = mean(age, na.rm = TRUE)
+        ), mean_age
+      ), 2
+    ), " years"
+  ), collapse = " and "
+)
+
+# Linear piped code
+covid_testing |> 
+  filter(result == "positive") |> 
+  group_by(gender) |> 
+  summarise(
+    mean_age = mean(age, na.rm = TRUE)
+  ) |> 
+  pull(mean_age) |> 
+  round(2) |> 
+  str_c(" years") |> 
+  str_c(collapse = " and ")
+
+```
+
+
