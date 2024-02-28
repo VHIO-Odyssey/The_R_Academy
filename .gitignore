@@ -3,5 +3,6 @@
 .Rhistory
 .RData
 .Ruserdata
-*_sandbox*
+sandbox.*
+*sandbox*
 *.html
