@@ -1,0 +1,42 @@
+---
+title: "Data"
+date: today 
+toc: true
+format:  
+  html: 
+    code-link: true
+    df-print: paged
+    embed-resources: true 
+editor_options:  
+  chunk_output_type: console
+execute:
+  warning: false
+---
+
+Data used in The R Academy.
+
+# setup
+
+```{r}
+library(medicaldata)
+```
+
+# data
+
+- [Streptomycin for Tuberculosis Dataset](https://htmlpreview.github.io/?https://github.com/higgi13425/medicaldata/blob/master/man/codebooks/strep_tb_codebook.html)
+
+```{r}
+strep_tb
+```
+
+- [COVID-19 Testing Dataset](https://htmlpreview.github.io/?https://github.com/higgi13425/medicaldata/blob/master/man/codebooks/covid_testing_codebook.html)
+
+```{r}
+covid_testing
+```
+
+- [Theophylline Pharmacokinetics Dataset](https://htmlpreview.github.io/?https://github.com/higgi13425/medicaldata/blob/master/man/codebooks/theoph_codebook.html)
+
+```{r}
+theoph
+```

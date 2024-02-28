@@ -1,0 +1,23 @@
+---
+date: today 
+toc: true
+format:  
+  html: 
+    code-link: true
+    df-print: paged
+    embed-resources: true 
+editor_options:  
+  chunk_output_type: console
+execute:
+  warning: false
+---
+
+# R
+
+- [**R for Data Science**](https://r4ds.hadley.nz/)
+- [**Advanced R**](https://adv-r.hadley.nz/)
+- [**R Packages**](https://r-pkgs.org/)
+
+# Git
+
+- [**Happy Git and GitHub for the useR**](https://happygitwithr.com/index.html)
