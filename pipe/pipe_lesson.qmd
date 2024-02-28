@@ -13,29 +13,27 @@ execute:
   warning: false
 ---
 
-The pipe takes the argument on the left and passes it as the first argument to the function on the right. 
-
-- Native pipe: `|>`
-
-```{r}
-"Hola" |> print()
-```
-
-- Magrittr pipe: `%>%`
+# Setup
 
 ```{r}
 library(magrittr)
-
-"Hola" %>% print()
-```
-
-Using the pipe operator, we can chain together multiple operations in a way that is easier to read for a human.
-
-```{r}
 library(medicaldata)
 library(tidyverse)
+```
 
-# No pipe matrioshka  
+# The native pipe
+
+The pipe(`|>`) takes the argument on the left and passes it as the first argument to the function on the right. 
+
+`x |> f()` is equivalent to `f(x)`.
+
+`x |> f(y)` is equivalent to `f(x, y)`.
+
+`x |> f(y) |> g(z)` is equivalent to `g(f(x, y), z)`.
+
+Using the pipe operator, we can chain together multiple operations in a way that is easier to read for a human. For example, using the pipe, matrioshka-like codes like this...
+
+```{r}
 str_c(
   str_c(
     round(
@@ -50,8 +48,11 @@ str_c(
     ), " years"
   ), collapse = " and "
 )
+```
 
-# Linear piped code
+...turn into a more linear and readable code where the order you read the functions is the actual order they are applied.
+
+```{r}
 covid_testing |> 
   filter(result == "positive") |> 
   group_by(gender) |> 
@@ -62,7 +63,5 @@ covid_testing |>
   round(2) |> 
   str_c(" years") |> 
   str_c(collapse = " and ")
-
 ```
-
 
