@@ -4,5 +4,5 @@
 .RData
 .Ruserdata
 sandbox.*
-*sandbox*
+*_sandbox.*
 *.html
