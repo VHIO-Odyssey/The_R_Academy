@@ -1,6 +1,7 @@
 # The R Academy
 
-![The R School of Athens, Rafael Sanzio, 1509-1511 ](.images/escuela_de_atenas_R.jpg)
+![](.images/escuela_de_atenas_R.jpg)
+The R School of Athens, Rafael Sanzio, 1509-1511
 
 ## Links
 
