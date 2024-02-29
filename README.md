@@ -1,6 +1,6 @@
 # The R Academy
 
-All you wanted to know about R but never dared to ask.
+![The R School of Athens, Rafael Sanzio, 1509-1511 ](.images/escuela_de_atenas_R.jpg)
 
 ## Links
 
