@@ -46,3 +46,10 @@ strep_tb |>
   pull(patient_id)
 ```
 
+# select
+
+```{r}
+strep_tb |> 
+  select(patient_id)
+```
+
