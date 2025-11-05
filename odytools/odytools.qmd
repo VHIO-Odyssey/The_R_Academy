@@ -1,0 +1,333 @@
+---
+title: "Introduction to odytools"
+date: today 
+toc: true
+format:  
+  html: 
+    code-link: false
+    df-print: paged
+    embed-resources: true 
+editor_options:  
+  chunk_output_type: console
+execute:
+  warning: false
+---
+
+# Introduction
+
+`odytools` is an R package containing a miscellaneous collection of functions designed to make our daily work easier. Here, we focus on the functions related to REDCap data import and exploration.
+
+`odytools` provides functions for very specific tasks; proper data management and reporting workflows should also include other packages typically used in data science. A great starting point to learn more about using R is [R for Data Science](https://r4ds.hadley.nz/){.uri}. For data summaries, the [gtsummary](https://www.danieldsjoberg.com/gtsummary/) package is highly recommended.
+
+# Setup
+
+## Install odytools
+
+odytools is hosted in [GitHub](https://github.com/VHIO-Odyssey/odytools). It can be installed using the `devtools` package.
+
+```{r}
+#| label: instalation
+#| eval: false
+
+# Install devtools if you don't have it already
+install.packages("devtools")
+
+# Install odytools from GitHub
+devtools::install_github("VHIO-Odyssey/odytools")
+
+```
+
+## Load packages
+
+```{r}
+#| label: load-packages
+
+# Load required packages
+library(odytools)
+library(usethis)
+library(dplyr)
+library(labelled)
+library(gtsummary)
+
+```
+
+# Import data
+
+## API key
+
+Yoou need a REDCap API key to import data from a REDCap project. It is recommended to store the API key in your `.Renviron` file for security reasons. You can edit your `.Renviron` file using the `usethis` package.
+
+```{r}
+#| label: edit-renviron
+#| eval: false
+
+# This function will open your .Renviron file
+edit_r_environ()
+
+```
+
+Values are stored as key-value pairs, one per line. For example, if your api key is `your_redcap_api_key` and want to store it under the name `MY_PROJECT`, you would add the following line to your `.Renviron` file.
+
+`MY_PROJECT=your_redcap_api_key`
+
+You need to restart your R session after editing your `.Renviron` file for the changes to take effect. You can access the stored API key using the `Sys.getenv()` function.
+
+```{r}
+#| label: get-api-key
+
+# Executing this will return the value of the MY_PROJECT variable.
+Sys.getenv("MY_PROJECT")
+
+```
+
+## Import REDCap Project
+
+The most important function in `odytools` for importing REDCap data is `ody_rc_import()`. You just need to provide your REDCap API key as an argument.
+
+```{r}
+#| label: import-redcap
+#| eval: false
+
+# Import the REDCap data.
+# See ?ody_rc_import for more details.
+redcap_data <- ody_rc_import(Sys.getenv("MY_PROJECT"))
+
+```
+
+```{r}
+#| label: load-redcap_data
+#| include: false
+
+# Trampilla para no descargarlos de nuevo cada vez
+load(here::here("odytools", "redcap_data.RData"))
+
+set.seed(556)
+rnd_cases <- sample(attr(redcap_data, "subjects"), 20)
+
+redcap_data <- ody_rc_filter_subject(redcap_data, rnd_cases)
+
+```
+
+# Anatomy of the imported object
+
+## Nested structure
+
+We'll use a test classic REDCap project with no events as an example. In this case, the imported object is a nested data frame where each row corresponds to a form.
+
+```{r}
+#| label: view-redcap-data
+
+redcap_data
+
+```
+
+The key concept to understand here is "nested." The idea is that a cell in a data frame can contain another data frame. For example, the ninth element of the column `redcap_form_data` is itself a data frame containing the tumor baseline information.
+
+```{r}
+#| label: nested-structure
+
+# This code extracts de ninth element of the redcap_form_data column.
+redcap_data$redcap_form_data[[9]]
+
+```
+
+Also note that this is a unique form (`redcap_instance_type` is 'unique' and `redcap_instance_number` is empty). Repeating forms would have `redcap_instance_type` as 'form' and `redcap_instance_number` indicating the instance number.
+
+```{r}
+#| label: repeating-form
+
+# This code extracts de third element of the redcap_form_data column.
+redcap_data$redcap_form_data[[3]]
+
+```
+
+## Variables
+
+Variables are labeled according to the metadata information, and missing data codes are differentiated from regular missing values.
+
+```{r}
+#| label: variable-labels
+
+# This code extracts the 'pt' column from the ninth element of redcap_form_data.
+redcap_data$redcap_form_data[[9]]$pt
+
+```
+
+For checkbox variables (those allowing multiple selections) a label is created for each choice and combination of choices.
+
+```{r}
+#| label: checkbox-variable-labels
+
+# 'project_information' is a checkbox variable and all the present combinations are labelled.
+redcap_data$redcap_form_data[[2]]$project_information
+
+```
+
+
+## Attributes
+
+Apart from the data itself, the imported object contains several attributes with information about the project.
+
+```{r}
+#| label: redcap-attributes
+
+# All the available attributes of the imported REDCap data.
+names(attributes(redcap_data))
+
+```
+
+Any of these attributes can be accessed using the `attr()` base function.
+
+```{r}
+#| label: project-metadata
+
+# Access the 'metadata' attribute.
+attr(redcap_data, "metadata")
+
+```
+
+
+# Data Selection
+
+As we have already shown, you can access the different elements of the imported REDCap data using base R code. However, `odytools` provides functions to facilitate data exploration. 
+
+The most straightforward way to select variables from the imported REDCap data is using the `ody_rc_select()` function. You just need to provide the imported data and the variable names you want to select. If all the variables are in the same form, the function will return a data frame with the selected variables.
+
+```{r}
+#| label: rc-select
+
+# Select the variables 'date_diagnosis' and 'pt' which are in the same form.
+ody_rc_select(redcap_data, date_diagnosis, pt)
+
+```
+
+Note that apart from the desired variables, the function automatically includes the subject identifier and the information about the form and instance type/number.
+
+If the variables are in different forms, the function will return a list of data frames, one per form.
+
+```{r}
+#| label: rc-select-multiple-forms
+
+# Select the variables 'origin' and 'histology' which are in different forms.
+ody_rc_select(redcap_data, origin, histology)
+
+```
+
+In case you want all the variables from a specific form, you can use the `ody_rc_select_form()` function. You just need to provide the imported data and the form name. 
+
+```{r}
+#| label: rc-select-form
+
+# Select all the variables from the 'tumor_baseline' form.
+ody_rc_select_form(redcap_data, tumor_baseline)
+
+```
+
+# Data Formatting
+
+Although variables are labeled according to the metadata information, their actual values remain raw.
+
+```{r}
+#| label: raw-variable-values
+
+# pT, pN and pM raw values directly extracted from the REDCap data. 
+ody_rc_select(redcap_data, pt, pn, pm)
+
+
+```
+
+To format variable values according to the metadata information, you can use the `ody_rc_format()` function. It just needs a data frame with the raw variable values as input and will return a data frame with the formatted variable values.
+
+```{r}
+#| label: formatted-variable-values
+
+# Formatted pT, pN and pM values.
+# First select the variables, then pipe the result to ody_rc_format().
+ody_rc_select(redcap_data, pt, pn, pm) |> 
+ody_rc_format()
+
+```
+
+Note that after formatting, missing data codes are converted to regular missing values (`NA`). This makes sense because formatted variables are typically used for data analysis, where a missing value is just a missing value, regardless of the reason it is missing. However, if you want to keep missing data codes as they are, you can set the `keep_user_na` argument to `TRUE`.
+
+```{r}
+#| label: formatted-variable-values-keep-na
+
+# Formatted pT, pN and pM values keeping missing data codes.
+# First select the variables, then pipe the result to ody_rc_format().
+ody_rc_select(redcap_data, pt, pn, pm) |> 
+  ody_rc_format(keep_user_na = TRUE)
+
+
+```
+
+
+
+# Other Utilities
+
+## Spread the data
+
+The nested structure of the imported REDCap data is the most natural way to contain a set of forms, where each one can have multiple instances per subject. However, sometimes it is more convenient to have a one-row-per-subject format. The `ody_rc_spread()` function spreads the imported REDCap data into a one-row-per-subject format. It only requires the imported data as input and returns a data frame with one row per subject. Forms with multiple instances will have their variable names suffixed with the instance number.
+
+```{r}
+#| label: rc-subsample
+#| include: false
+
+redcap_data_copy <- redcap_data
+
+redcap_data <- redcap_data |> 
+  slice(c(2, 12))
+
+```
+
+
+```{r}
+#| label: rc-spread
+
+# Spread the REDCap data to a one-row-per-subject format.
+ody_rc_spread(redcap_data)
+
+```
+
+```{r}
+#| label: rc-back
+#| include: false
+
+# Restore the original redcap_data object
+redcap_data <- redcap_data_copy
+
+```
+
+
+## Filter subjects
+
+If you are interested on working with a subset of subjects from the imported REDCap data, you can use the `ody_rc_filter_subject()` function. You just need to provide the imported data and a vector with the subject identifiers you want to keep. This will create a new object containing only the selected subjects.
+
+
+```{r}
+#| label: filter-subjects
+
+# Select a subset of subjects from the imported REDCap data.
+selected_subjects <- c("11685296", "14176593", "18614291")
+
+# Filter the REDCap data to keep only the selected subjects.
+redcap_data_subset <- ody_rc_filter_subject(redcap_data, selected_subjects)
+
+# View pT, pN and pM values for the selected subjects.
+ody_rc_select(redcap_data_subset, pt, pn, pm)
+
+```
+
+## The Data Viewer
+
+REDCap data can be explored using the `ody_rc_view()` function. This function launches an interactive data viewer in your web browser, allowing you to explore the data in a user-friendly way. This viewer is the same as the one hosted [here](https://redcapviewer.vhio.net/). When launching the viewer locally, simply click the submit button without entering an API key; it will use the `redcap_data` object passed as an argument. Refer to [this document](https://github.com/VHIO-Odyssey/redcap_viewer/blob/master/docs/redcap_viewer_doc_20251023.pdf) for more details.
+
+```{r}
+#| label: launch-data-viewer
+#| eval: false
+
+# Launch the REDCap data viewer.
+ody_rc_view(redcap_data)
+
+
+```
