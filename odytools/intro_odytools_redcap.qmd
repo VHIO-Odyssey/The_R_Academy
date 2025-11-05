@@ -1,5 +1,5 @@
 ---
-title: "Introduction to odytools"
+title: "Introduction to odytools REDCap functions"
 date: today 
 toc: true
 format:  
@@ -7,6 +7,7 @@ format:
     code-link: false
     df-print: paged
     embed-resources: true 
+    html-table-processing: none
 editor_options:  
   chunk_output_type: console
 execute:
@@ -15,7 +16,7 @@ execute:
 
 # Introduction
 
-`odytools` is an R package containing a miscellaneous collection of functions designed to make our daily work easier. Here, we focus on the functions related to REDCap data import and exploration.
+`odytools` is an R package containing a miscellaneous collection of functions designed to make our daily work easier. Here, we focus on the most important functions related to REDCap data import and exploration.
 
 `odytools` provides functions for very specific tasks; proper data management and reporting workflows should also include other packages typically used in data science. A great starting point to learn more about using R is [R for Data Science](https://r4ds.hadley.nz/){.uri}. For data summaries, the [gtsummary](https://www.danieldsjoberg.com/gtsummary/) package is highly recommended.
 
@@ -47,6 +48,7 @@ library(odytools)
 library(usethis)
 library(dplyr)
 library(labelled)
+library(lubridate)
 library(gtsummary)
 
 ```
@@ -55,7 +57,7 @@ library(gtsummary)
 
 ## API key
 
-Yoou need a REDCap API key to import data from a REDCap project. It is recommended to store the API key in your `.Renviron` file for security reasons. You can edit your `.Renviron` file using the `usethis` package.
+You need a REDCap API key to import data from a REDCap project. It is recommended to store the API key in your `.Renviron` file for security reasons. You can edit your `.Renviron` file using the `usethis` package.
 
 ```{r}
 #| label: edit-renviron
@@ -66,7 +68,7 @@ edit_r_environ()
 
 ```
 
-Values are stored as key-value pairs, one per line. For example, if your api key is `your_redcap_api_key` and want to store it under the name `MY_PROJECT`, you would add the following line to your `.Renviron` file.
+Values are stored as key-value pairs, one per line. For example, if your API key is `your_redcap_api_key` and want to store it under the name `MY_PROJECT`, you would add the following line to your `.Renviron` file.
 
 `MY_PROJECT=your_redcap_api_key`
 
@@ -309,7 +311,7 @@ ody_rc_select(redcap_data, pt, pn, pm) |>
 
 ## Spread the data
 
-The nested structure of the imported REDCap data is the most natural way to contain a set of forms, where each one can have multiple instances per subject. However, sometimes it is more convenient to have a one-row-per-subject format. The `ody_rc_spread()` function spreads the imported REDCap data into a one-row-per-subject format. It only requires the imported data as input and returns a data frame with one row per subject. Forms with multiple instances will have their variable names suffixed with the instance number.
+The nested structure of the imported REDCap data is the most natural way to contain a set of forms where each one can have multiple instances per subject. However, sometimes it is more convenient to have a one-row-per-subject format. The `ody_rc_spread()` function spreads the imported REDCap data into a one-row-per-subject format. It only requires the imported data as input and returns a data frame with one row per subject. Forms with multiple instances will have their variable names suffixed with the instance number.
 
 ```{r}
 #| label: rc-subsample
@@ -370,6 +372,96 @@ REDCap data can be explored using the `ody_rc_view()` function. This function la
 
 # Launch the REDCap data viewer.
 ody_rc_view(redcap_data)
+
+
+```
+
+
+# An Example
+
+We are going to create a baseline summary table using data imported from REDCap. The table will include age at diagnosis, histology, PSA at diagnosis, and TNM staging. We will need data from two different forms (demographics and tumor_baseline) and make some calculations.
+
+```{r}
+#| label: example-load-data
+#| include: false
+
+load(here::here("odytools", "redcap_data.RData"))
+
+```
+
+```{r}
+
+birth_date <- 
+  ody_rc_select(redcap_data, birthdate) |> 
+  select(-(2:4))
+
+birth_date
+
+baseline_raw <- 
+  ody_rc_select(
+    redcap_data, 
+    date_diagnosis, 
+    histology,
+    psa_diagnosis_value,
+    pt, 
+    pn, 
+    pm
+  ) |> 
+  select(-(2:4))
+
+baseline_raw
+
+baseline <- 
+  inner_join(birth_date, baseline_raw, by = "sap") |> 
+  ody_rc_format() |> 
+  mutate(
+    age_at_diagnosis = time_length(date_diagnosis - birthdate, "years"),
+    .after = sap
+  ) |> 
+  select(-birthdate , -date_diagnosis)
+
+baseline
+
+theme_gtsummary_compact()
+baseline |> 
+  select(-sap) |> 
+  set_variable_labels(
+    histology = "Histology",
+    psa_diagnosis_value = "PSA at diagnosis",
+    pt = "pT",
+    pn = "pN",
+    pm = "pM",
+    age_at_diagnosis = "Age at diagnosis (years)"
+  ) |> 
+  tbl_summary(
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c(
+    "{mean} ({sd})", 
+    "{median} ({p25}, {p75})", 
+    "{min}, {max}"
+    )
+  )
+
+```
+
+```{r}
+#| label: render
+#| eval: false
+#| include: false
+# Not evaluated chunk, execute it to render a final version of the report.
+# Keep this chunk at the end of the file.
+rlang::check_installed("withr")
+
+withr::with_dir(
+  rstudioapi::getActiveDocumentContext()$path |> dirname(),
+  quarto::quarto_render(
+    input = rstudioapi::getActiveDocumentContext()$path,
+    output_file = odytools::ody_add_version(
+      rstudioapi::getActiveDocumentContext()$path |> 
+        stringr::str_remove_all("^.*/|\\..*$")
+    )
+  )
+)
 
 
 ```
