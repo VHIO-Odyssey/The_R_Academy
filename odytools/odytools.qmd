@@ -126,7 +126,7 @@ The key concept to understand here is "nested." The idea is that a cell in a dat
 ```{r}
 #| label: nested-structure
 
-# This code extracts de ninth element of the redcap_form_data column.
+# Extract de ninth element of the redcap_form_data column.
 redcap_data$redcap_form_data[[9]]
 
 ```
@@ -136,30 +136,72 @@ Also note that this is a unique form (`redcap_instance_type` is 'unique' and `re
 ```{r}
 #| label: repeating-form
 
-# This code extracts de third element of the redcap_form_data column.
+# Extracts the third element of the redcap_form_data column.
+# It is a repeating form with multiple instances per subject.
 redcap_data$redcap_form_data[[3]]
 
 ```
 
 ## Variables
 
-Variables are labeled according to the metadata information, and missing data codes are differentiated from regular missing values.
+Variables are stored in raw format as characters, exactly as they were imported from REDCap including missing data codes.
+
+```{r}
+#| label: variable-values
+
+# Extract the 'psa_diagnosis_value' column from the ninth element of redcap_form_data.
+# It contains a numeric variable.
+redcap_data$redcap_form_data[[9]]$psa_diagnosis_value
+
+```
+
+```{r}
+#| label: variable-values-2
+
+# Extract the 'date_diagnosis' column from the ninth element of redcap_form_data.
+# It contains a date variable.
+redcap_data$redcap_form_data[[9]]$date_diagnosis
+
+
+```
+
+If applicable, variables are labeled according to the metadata information.
 
 ```{r}
 #| label: variable-labels
 
-# This code extracts the 'pt' column from the ninth element of redcap_form_data.
+# Extract the 'pt' column from the ninth element of redcap_form_data.
+# It contains a labeled variable.
 redcap_data$redcap_form_data[[9]]$pt
 
 ```
 
-For checkbox variables (those allowing multiple selections) a label is created for each choice and combination of choices.
+For checkbox variables (those allowing multiple selections) a label is created for each choice and present combination of choices.
 
 ```{r}
 #| label: checkbox-variable-labels
 
-# 'project_information' is a checkbox variable and all the present combinations are labelled.
-redcap_data$redcap_form_data[[2]]$project_information
+# 'first_met_location' is a checkbox variable. 
+# All the present combinations are labelled.
+redcap_data$redcap_form_data[[11]]$first_met_location
+
+```
+
+Associated with each checkbox variable is a set of binary variables (FALSE/TRUE) indicating whether each choice was selected.
+
+```{r}
+#| label: checkbox-binary-variables
+
+# Binary variables associated with the 'first_met_location' checkbox variable.
+redcap_data$redcap_form_data[[11]]$first_met_location___1
+redcap_data$redcap_form_data[[11]]$first_met_location___2
+redcap_data$redcap_form_data[[11]]$first_met_location___3
+redcap_data$redcap_form_data[[11]]$first_met_location___4
+redcap_data$redcap_form_data[[11]]$first_met_location___5
+redcap_data$redcap_form_data[[11]]$first_met_location___6
+redcap_data$redcap_form_data[[11]]$first_met_location___7
+redcap_data$redcap_form_data[[11]]$first_met_location___8
+
 
 ```
 
