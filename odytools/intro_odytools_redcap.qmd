@@ -103,6 +103,8 @@ redcap_data <- ody_rc_import(Sys.getenv("MY_PROJECT"))
 # Trampilla para no descargarlos de nuevo cada vez
 load(here::here("odytools", "redcap_data.RData"))
 
+
+# Selecciona 20 casos aleatorios para agilizar los ejemplos
 set.seed(556)
 rnd_cases <- sample(attr(redcap_data, "subjects"), 20)
 
